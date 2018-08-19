@@ -159,8 +159,10 @@ d3.csv("csv/ge2015.csv").then(function(data) {
 
 var barsH = 300;
 var barsW = 400;
-var padding = 20;
+var padding = 40;
 var paddingBetweenBars = 10;
+
+var getActualDrawingSize = function(size) { return size - (padding * 2)};
 
 
 var barChartSvg = d3.select("#svg-container")
@@ -169,22 +171,39 @@ var barChartSvg = d3.select("#svg-container")
     .attr("width", barsW)
     .attr("height", barsH);
 
-var scale = d3.scaleLinear()
+var yScale = d3.scaleLinear()
     .domain([0,1])
-    .range([0, barsH - padding]);
+    .range([0, getActualDrawingSize(barsH)]);
+
+var yAxisScale = d3.scaleLinear()
+    .domain([0,1])
+    .range([getActualDrawingSize(barsH), 0]);
+
+barChartSvg.append("g")
+    .attr("class", "y-axis")
+    //.attr("x", 20)
+    .attr("transform", "translate(" + padding + "," + padding + ")")
+    .call(d3.axisLeft(yAxisScale).tickFormat(d3.format(",.0%")));
 
 var showResultAsBar = function(constituencyId) {
     var results = constituencyData[constituencyId]["results"];
 
-    var individualBarWidth = (barsW / results.length) - paddingBetweenBars;
+    var individualBarWidth = (getActualDrawingSize(barsW) / results.length) - paddingBetweenBars;
 
     var getXOffset = function(d, i) {
-        return (individualBarWidth + paddingBetweenBars) * i;
+        return ((individualBarWidth + paddingBetweenBars) * i) + padding + paddingBetweenBars;
     };
 
-    var getBarHeight = function(d) { return scale(d.voteShare); }
+    var getBarHeight = function(d) { return yScale(d.voteShare); }
 
-    var getYOffset = function(d) { return barsH - getBarHeight(d); };
+    var getYOffset = function(d) { return barsH - getBarHeight(d) - padding; };
+/*
+    var yScale = d3.scaleLinear()
+        .domain([0, 1]) // input 
+        .range([barsH, 0]); // output */
+
+    // y axis
+    
 
     barChartSvg.selectAll("rect")
         .remove();
@@ -193,11 +212,13 @@ var showResultAsBar = function(constituencyId) {
         .data(results)
         .enter()
         .append("rect")
-        .attr("height", getBarHeight)
         .attr("width", individualBarWidth)
         .attr("x", getXOffset)
-        .attr("y", getYOffset)
-        .style("fill", function(d) { return getPartyColour(d.party)});
+        .attr("y", barsH - padding)
+        .style("fill", function(d) { return getPartyColour(d.party)})
+        .transition()
+        .attr("height", getBarHeight)
+        .attr("y", getYOffset);
 }
 
 
