@@ -173,28 +173,82 @@ var barChartSvg = d3.select("#svg-container")
 
 var yScale = d3.scaleLinear()
     .domain([0,1])
-    .range([0, getActualDrawingSize(barsH)]);
-
-var yAxisScale = d3.scaleLinear()
-    .domain([0,1])
     .range([getActualDrawingSize(barsH), 0]);
+
+var yAxisGen = d3.axisLeft(yScale).tickFormat(d3.format(".0%"));
 
 barChartSvg.append("g")
     .attr("class", "y-axis")
     //.attr("x", 20)
     .attr("transform", "translate(" + padding + "," + padding + ")")
-    .call(d3.axisLeft(yAxisScale).tickFormat(d3.format(",.0%")));
+    .call(yAxisGen);
 
 var showResultAsBar = function(constituencyId) {
     var results = constituencyData[constituencyId]["results"];
 
-    var individualBarWidth = (getActualDrawingSize(barsW) / results.length) - paddingBetweenBars;
+    var individualBarWidth = ((getActualDrawingSize(barsW) - paddingBetweenBars) / results.length) - paddingBetweenBars;
 
     var getXOffset = function(d, i) {
         return ((individualBarWidth + paddingBetweenBars) * i) + padding + paddingBetweenBars;
     };
 
-    var getBarHeight = function(d) { return yScale(d.voteShare); }
+    var getBarHeight = function(d) { return getActualDrawingSize(barsH) - yScale(d.voteShare); }
+
+    var abbreviateName = function(name) {
+        var split = name.trim().split(" ");
+
+        var abbrev = "";
+
+        for (var i = 0; i < split.length; i++) {
+            abbrev += split[i][0];
+        }
+
+        return abbrev;
+    }
+
+    var axisNames = [""];
+
+    var getUniqueNameForAxis = function(name) {
+        // if name contains a space, then abbreviate
+        if (name.includes(" ")) {
+            name = abbreviateName(name);
+        }
+
+        if (axisNames.includes(name)) {
+            return getUniqueNameForAxis(name + "#");
+        } else {
+            return name;
+        }
+    }
+
+    var axisPositions = [padding];
+
+    for (var i = 0; i < results.length; i++) {
+        var partyName = results[i]["party"];
+
+        axisNames.push(getUniqueNameForAxis(partyName));
+
+        axisPositions.push(getXOffset(null, i) + (individualBarWidth / 2));
+    }
+
+    axisNames.push("");
+    axisPositions.push(padding + getActualDrawingSize(barsW));
+
+    
+
+    
+
+    var xScale = d3.scaleOrdinal()
+        .domain(axisNames)
+        .range(axisPositions);
+        //.padding(0.1);
+        //.paddingInner(0.1)
+        //.paddingOuter(0.025);
+
+        //console.log("step:"+xScale.step());
+        //console.log("bandwidth:" + xScale.bandwidth());
+
+    var xAxisGen = d3.axisBottom(xScale).tickFormat(function(d, i) { return d.replace("#", "");});
 
     var getYOffset = function(d) { return barsH - getBarHeight(d) - padding; };
 /*
@@ -203,7 +257,13 @@ var showResultAsBar = function(constituencyId) {
         .range([barsH, 0]); // output */
 
     // y axis
-    
+
+    barChartSvg.select(".x-axis").remove();
+
+    var xAxis = barChartSvg.append("g")
+        .call(xAxisGen)
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + (barsH-padding) + ")");
 
     barChartSvg.selectAll("rect")
         .remove();
