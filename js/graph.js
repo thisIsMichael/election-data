@@ -104,7 +104,10 @@ d3.csv("csv/ge2015.csv").then(function(data) {
                 "winner": data[i]["party_abbreviation"],
                 "results": [{ 
                     "party": data[i]["party_abbreviation"],
-                    "voteShare": parseFloat(data[i]["share"])
+                    "partyFullName": data[i]["party_name"],
+                    "candidate": data[i]["firstname"] + " " + data[i]["surname"],
+                    "voteShare": parseFloat(data[i]["share"]),
+                    "change": data[i]["change"]
                 }]
             };
         }
@@ -140,6 +143,8 @@ d3.csv("csv/ge2015.csv").then(function(data) {
             })
             .on("mouseout", function(d){
                 svg.select("#" + getConstituencyDomId(d.properties.pcon17cd))
+                    .transition()
+                    .duration(100)
                     .style("opacity", 1);
                     d3.select(".const-name")
                     .text("");
@@ -184,6 +189,16 @@ barChartSvg.append("g")
     .call(yAxisGen);
 
 var showResultAsBar = function(constituencyId) {
+
+    barChartSvg.select(".title").remove();
+    
+    var title = barChartSvg.append("text")
+        .text(constituencyData[constituencyId]["name"])
+        .attr("class", "title");
+
+    title.attr("x", (barsW - title.node().getComputedTextLength()) / 2)
+        .attr("y", padding / 2);
+
     var results = constituencyData[constituencyId]["results"];
 
     var individualBarWidth = ((getActualDrawingSize(barsW) - paddingBetweenBars) / results.length) - paddingBetweenBars;
