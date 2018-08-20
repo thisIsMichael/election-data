@@ -10,8 +10,12 @@
             pointer-events: none;
         }
 
-        #bars {
+        #chartsContainer {
             margin-left: 20px;
+        }
+
+        .chart {
+            margin-bottom: 20px;
         }
 
         .const-name {
@@ -27,9 +31,24 @@
             border: 1px solid black;
         }
 
+        .tooltip {
+            position: absolute;
+            max-width: 400px;
+            height:auto;
+            padding:5px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.5);
+            pointer-events: none; /* Ensure tooltip doesn't take mouse events */
+            font-family: sans-serif;
+            font-size: 12pt;
+        }
+
+
         </style>
         
         <!--<script src="js/d3.v5.min.js"></script>-->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
         <script src="http://d3js.org/d3.v5.min.js"></script>
         <script src="https://d3js.org/topojson.v3.min.js"></script>
     </head>
