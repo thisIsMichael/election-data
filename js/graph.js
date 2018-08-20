@@ -94,7 +94,7 @@ d3.csv("csv/ge2015.csv").then(function(data) {
             "surName": result["surname"],
             "votes": result["votes"],
             "voteShare": parseFloat(result["share"]),
-            "change": result["change"]
+            "change": parseFloat(result["change"])
         };
     }
 
@@ -297,7 +297,7 @@ var showResultAsBar = function(constituencyId) {
         if (result)
         {
 
-            d3.select("." + getUniqueBarName(result))
+            d3.select("#bars ." + getUniqueBarName(result))
                     .attr("opacity", 0.5);
 
                 var numberFormatter = d3.format(",");
@@ -360,6 +360,55 @@ var showResultAsBar = function(constituencyId) {
         .transition()
         .attr("height", getBarHeight)
         .attr("y", getYOffset);
+
+    var yPercentChangeScale = d3.scaleLinear()
+        /*.domain([
+            d3.min(results, function(d) { return d.change;}),
+            d3.max(results, function(d) { return d.change;})
+        ])*/
+        .domain([-0.4, 0.4])
+        .range([-(getActualDrawingSize(barsH) / 2), (getActualDrawingSize(barsH) / 2)]);
+
+    changeChartSvg.selectAll("rect")
+        .remove();
+
+    var getYChangeOffset = function(d) {
+        if (d && d.change) {
+            var percentChange = d.change;
+
+            if (percentChange < 0) {
+                return barsH / 2;
+            } else {
+                return (barsH / 2) - getChangeBarHeight(d);
+            }
+        }
+
+        
+    };
+
+    var getChangeBarHeight = function(d) { 
+        if (d.change) {
+            return Math.abs((yPercentChangeScale(d.change)));
+        } else {
+            return 0;
+        }
+         
+    };
+
+    changeChartSvg.selectAll("rect")
+        .data(results)
+        .enter()
+        .append("rect")
+        .attr("class", getUniqueBarName)
+        .attr("width", individualBarWidth)
+        .attr("x", getXOffset)
+        .attr("y", barsH / 2)
+        .style("fill", function(d) { return getPartyColour(d.party)})
+        .on("mouseover", onBarChartMouseOver)
+        .on("mouseout", onBarChartMouseOut)
+        .transition()
+        .attr("height", getChangeBarHeight)
+        .attr("y", getYChangeOffset);
 }
 
 
