@@ -203,11 +203,6 @@ var changeChartSvg = chartsContainer.append("svg")
     .attr("width", barsW)
     .attr("height", barsH);
 
-changeChartSvg.append("g")
-    .attr("class", "y-axis")
-    .attr("transform", "translate(" + padding + "," + padding + ")")
-    .call(yAxisGen);
-
 var showResultAsBar = function(constituencyId) {
 
     barChartSvg.select(".title").remove();
@@ -293,34 +288,36 @@ var showResultAsBar = function(constituencyId) {
 
     // y axis
 
-    var onBarChartMouseOver = function(result) {
+    var onBarChartMouseOver = function(result, parentId, getTooltipHtml) {
         if (result)
         {
-
-            d3.select("#bars ." + getUniqueBarName(result))
+            d3.select("#" + parentId + " ." + getUniqueBarName(result))
                     .attr("opacity", 0.5);
-
-                var numberFormatter = d3.format(",");
-                var votePercentFormatter = d3.format(".2%");
 
                 // move tooltip to mouse here
                 tooltip.transition()
                     .duration(500)
                     .style("opacity", 0.85)
-                tooltip.html(
-                    "<strong>" + result.partyName + "</strong>: " + result.firstName + " " + result.surName
-                    + "<BR>Votes: " + numberFormatter(result. votes)
-                    + "<BR>Vote Share: " + votePercentFormatter(result.voteShare)
-                )
-            .style("left", (d3.event.pageX + 14) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
+                tooltip.html(getTooltipHtml(result))
+                    .style("left", (d3.event.pageX + 14) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
 
         }
     };
 
+    var getVoteShareTooltipHtml = function(result) {
+        var numberFormatter = d3.format(",");
+        var votePercentFormatter = d3.format(".2%");
+
+        return "<strong>" + result.partyName + "</strong>: " + result.firstName + " " + result.surName
+                    + "<BR>Votes: " + numberFormatter(result.votes)
+                    + "<BR>Vote Share: " + votePercentFormatter(result.voteShare);
+    }
+
     var onBarChartMouseOut = function(result) {
-        d3.select("." + getUniqueBarName(result))
-        .attr("opacity", 1);
+        d3.selectAll("." + getUniqueBarName(result))
+            .transition()
+            .attr("opacity", 1);
 
         // hide tooltip
         tooltip.transition()
@@ -338,7 +335,7 @@ var showResultAsBar = function(constituencyId) {
 
     barChartSvg.selectAll(".x-axis .tick")
         .data(ticksData)
-        .on("mouseover", onBarChartMouseOver)
+        .on("mouseover", function(d) { onBarChartMouseOver(d, "bars", getVoteShareTooltipHtml)})
         .on("mouseout", onBarChartMouseOut);
 
     barChartSvg.selectAll("rect")
@@ -355,7 +352,7 @@ var showResultAsBar = function(constituencyId) {
         .attr("x", getXOffset)
         .attr("y", barsH - padding)
         .style("fill", function(d) { return getPartyColour(d.party)})
-        .on("mouseover", onBarChartMouseOver)
+        .on("mouseover", function(d) { onBarChartMouseOver(d, "bars", getVoteShareTooltipHtml)})
         .on("mouseout", onBarChartMouseOut)
         .transition()
         .attr("height", getBarHeight)
@@ -366,8 +363,17 @@ var showResultAsBar = function(constituencyId) {
             d3.min(results, function(d) { return d.change;}),
             d3.max(results, function(d) { return d.change;})
         ])*/
-        .domain([-0.4, 0.4])
+        .domain([-0.45, 0.45])
         .range([-(getActualDrawingSize(barsH) / 2), (getActualDrawingSize(barsH) / 2)]);
+
+    changeChartSvg.select(".y-axis").remove();
+
+    var yChangeAxisGen = d3.axisLeft(yPercentChangeScale).tickFormat(d3.format(".0%"));
+
+    changeChartSvg.append("g")
+    .attr("class", "y-axis")
+    .attr("transform", "translate(" + padding + "," + ((getActualDrawingSize(barsH) / 2) + padding) + ")")
+    .call(yChangeAxisGen);
 
     changeChartSvg.selectAll("rect")
         .remove();
@@ -402,6 +408,13 @@ var showResultAsBar = function(constituencyId) {
         }
     };
 
+    var getVotePercentChangeTooltipHtml = function(result) {
+        var votePercentFormatter = d3.format(".2%");
+
+        return "<strong>" + result.partyName + "</strong> "
+                    + "<BR>% Change: " + votePercentFormatter(getPercentChange(result));
+    };
+
     changeChartSvg.selectAll("rect")
         .data(results)
         .enter()
@@ -411,7 +424,7 @@ var showResultAsBar = function(constituencyId) {
         .attr("x", getXOffset)
         .attr("y", barsH / 2)
         .style("fill", function(d) { return getPartyColour(d.party)})
-        .on("mouseover", onBarChartMouseOver)
+        .on("mouseover", function(d) { onBarChartMouseOver(d, "change", getVotePercentChangeTooltipHtml)})
         .on("mouseout", onBarChartMouseOut)
         .transition()
         .attr("height", getChangeBarHeight)
@@ -428,8 +441,10 @@ var showResultAsBar = function(constituencyId) {
         .style("display", "none");
     changeChartSvg.selectAll(".x-axis .tick text")
         .attr("transform", "translate(0," + ((barsH / 2) - padding) + ")");
+
+    var ticksData = [undefined].concat(results);
+    changeChartSvg.selectAll(".x-axis .tick")
+        .data(ticksData)
+        .on("mouseover", function(d) { onBarChartMouseOver(d, "change", getVotePercentChangeTooltipHtml)})
+        .on("mouseout", onBarChartMouseOut);
 }
-
-
-
-
