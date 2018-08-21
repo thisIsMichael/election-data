@@ -373,8 +373,8 @@ var showResultAsBar = function(constituencyId) {
         .remove();
 
     var getYChangeOffset = function(d) {
-        if (d && d.change) {
-            var percentChange = d.change;
+        if (d) {
+            var percentChange = getPercentChange(d);
 
             if (percentChange < 0) {
                 return barsH / 2;
@@ -386,13 +386,20 @@ var showResultAsBar = function(constituencyId) {
         
     };
 
-    var getChangeBarHeight = function(d) { 
+    var getPercentChange = function(d) {
         if (d.change) {
-            return Math.abs((yPercentChangeScale(d.change)));
+            return d.change;
+        } else if (d.voteShare) {
+            return d.voteShare;
         } else {
             return 0;
         }
-         
+    }
+
+    var getChangeBarHeight = function(d) { 
+        if (d) {
+            return Math.abs((yPercentChangeScale(getPercentChange(d))));
+        }
     };
 
     changeChartSvg.selectAll("rect")
@@ -409,6 +416,18 @@ var showResultAsBar = function(constituencyId) {
         .transition()
         .attr("height", getChangeBarHeight)
         .attr("y", getYChangeOffset);
+
+    changeChartSvg.select(".x-axis").remove();
+
+    var xAxis = changeChartSvg.append("g")
+        .call(xAxisGen)
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + (barsH / 2) + ")");
+
+    changeChartSvg.selectAll(".x-axis .tick line")
+        .style("display", "none");
+    changeChartSvg.selectAll(".x-axis .tick text")
+        .attr("transform", "translate(0," + ((barsH / 2) - padding) + ")");
 }
 
 
